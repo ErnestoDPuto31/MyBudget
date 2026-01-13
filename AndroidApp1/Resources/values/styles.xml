@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+	<!-- Base application theme -->
+	<style name="Theme.MyBudget" parent="android:Theme.Light">
+		<!-- Customize your main app colors here -->
+		<item name="android:windowBackground">#FFFFFF</item>
+		<item name="android:colorPrimary">#2196F3</item>
+		<!-- optional -->
+		<item name="android:colorPrimaryDark">#1976D2</item>
+		<!-- optional -->
+		<item name="android:colorAccent">#FF4081</item>
+		<!-- optional -->
+	</style>
+
+	<!-- Splash Screen Theme -->
+	<style name="Theme.MyBudget.Splash" parent="android:Theme.Light.NoTitleBar.Fullscreen">
+		<item name="android:windowBackground">#FFFFFF</item>
+	</style>
+
+</resources>

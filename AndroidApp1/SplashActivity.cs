@@ -11,6 +11,9 @@ namespace AndroidApp1
         {
             base.OnCreate(savedInstanceState);
             SetContentView(Resource.Layout.splash_layout);
+            var content = FindViewById<LinearLayout>(Resource.Id.main_container); 
+            content.Alpha = 0f;
+            content.Animate().Alpha(1f).SetDuration(800).Start();
 
             // Delay for 2 seconds, then start MainActivity
             new Handler().PostDelayed(() =>

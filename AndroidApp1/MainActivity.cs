@@ -401,26 +401,65 @@ namespace AndroidApp1
             expenseListData.AddRange(allExpenses);
 
             double totalToday = 0;
-            double totalSpentThisMonth = 0;
-            remainingWeekly = weeklyBudget;
+            double totalSpentMonthlyEssentials = 0;
+            double totalSpentRegularThisWeek = 0;
+            double totalSpentRegularOtherWeeks = 0;
+
             DateTime today = DateTime.Today;
+            int daysInMonth = DateTime.DaysInMonth(today.Year, today.Month);
+            int daysLeft = (daysInMonth - today.Day) + 1; // +1 to include today
+
+            var daysLeftText = FindViewById<TextView>(Resource.Id.daysLeftText);
+            if (daysLeftText != null)
+            {
+                daysLeftText.Text = $"{daysLeft} Days Remaining";
+
+                // UI Touch: Turn text orange if less than 5 days left
+                if (daysLeft <= 5)
+                    daysLeftText.SetTextColor(Color.ParseColor("#F57C00"));
+                else
+                    daysLeftText.SetTextColor(Color.Gray);
+            }
+
+            // Calculate the start of the current week
+            DateTime startOfWeek = today.AddDays(-7);
 
             foreach (var exp in allExpenses)
             {
-                totalSpentThisMonth += exp.Amount;
                 bool isMonthlyEssential = exp.Category == "ESSENTIAL" && exp.Description.Contains("[MONTHLY]");
+                DateTime expDate;
+                bool hasValidDate = DateTime.TryParse(exp.Date, out expDate);
 
-                if (!isMonthlyEssential)
+                if (isMonthlyEssential)
                 {
-                    remainingWeekly -= exp.Amount;
+                    totalSpentMonthlyEssentials += exp.Amount;
+                }
+                else
+                {
+                    // If the expense happened within the last 7 days, it counts against THIS week
+                    if (hasValidDate && expDate.Date >= startOfWeek)
+                    {
+                        totalSpentRegularThisWeek += exp.Amount;
+                    }
+                    else
+                    {
+                        // Older expenses only affect the monthly total
+                        totalSpentRegularOtherWeeks += exp.Amount;
+                    }
                 }
 
-                if (DateTime.TryParse(exp.Date, out DateTime expenseDate))
-                {
-                    if (expenseDate.Date == today) totalToday += exp.Amount;
-                }
+                // Today's tracker
+                if (hasValidDate && expDate.Date == today)
+                    totalToday += exp.Amount;
             }
-            remainingMonthly = monthlyBudget - totalSpentThisMonth;
+
+            // 1. Monthly Balance (Everything subtracted)
+            remainingMonthly = monthlyBudget - (totalSpentMonthlyEssentials + totalSpentRegularThisWeek + totalSpentRegularOtherWeeks);
+
+            // 2. Weekly Balance
+            double monthlyLeftAfterBills = monthlyBudget - totalSpentMonthlyEssentials;
+            remainingWeekly = (monthlyLeftAfterBills / 4) - totalSpentRegularThisWeek;
+
             if (spentTodayText != null) spentTodayText.Text = $"PHP {totalToday:F2}";
         }
 

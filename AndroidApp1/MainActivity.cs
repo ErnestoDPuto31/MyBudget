@@ -1,9 +1,9 @@
 ﻿using Android.App;
-using Android.OS;
-using Android.Widget;
+using Android.Content;
 using Android.Graphics;
-using System.Collections.Generic;
-using System;
+using Android.Graphics.Drawables;
+using Android.OS;
+using Android.Views;
 
 namespace AndroidApp1
 {
@@ -11,7 +11,9 @@ namespace AndroidApp1
     public class MainActivity : Activity
     {
         double weeklyBudget = 0;
-        double remainingBalance = 0;
+        double monthlyBudget = 0;
+        double remainingWeekly = 0;
+        double remainingMonthly = 0;
         bool lowBalanceNotified = false;
 
         List<Expense> expenseListData = new List<Expense>();
@@ -20,44 +22,50 @@ namespace AndroidApp1
 
         const string CHANNEL_ID = "budget_channel";
 
-        // Global UI references for updating
-        TextView balanceText;
-        ProgressBar progressBar;
-        TextView spentTodayText;
+        // UI references
+        TextView? monthlyBalanceText;
+        TextView? weeklyBalanceText;
+        ProgressBar? progressBar;
+        TextView? spentTodayText;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
             RequestWindowFeature(Android.Views.WindowFeatures.NoTitle);
             SetContentView(Resource.Layout.activity_main);
+            new Handler(Looper.MainLooper).PostDelayed(() => {
+                RefreshData();
+                UpdateBalance();
+            }, 100);
+
+            // 1. CONNECT UI
             spentTodayText = FindViewById<TextView>(Resource.Id.spentTodayText);
+            monthlyBalanceText = FindViewById<TextView>(Resource.Id.monthlyBalanceText);
+            weeklyBalanceText = FindViewById<TextView>(Resource.Id.weeklyBalanceText);
+            progressBar = FindViewById<ProgressBar>(Resource.Id.budgetProgress);
+            ListView? expenseListView = FindViewById<ListView>(Resource.Id.expenseListView);
+            EditText? budgetInput = FindViewById<EditText>(Resource.Id.budgetInput);
+            Button? setBudgetBtn = FindViewById<Button>(Resource.Id.setBudgetBtn);
 
-            // Handle Notification Permissions for Android 13+
-            if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
-            {
-                if (CheckSelfPermission(Android.Manifest.Permission.PostNotifications) != Android.Content.PM.Permission.Granted)
-                {
-                    RequestPermissions(new string[] { Android.Manifest.Permission.PostNotifications }, 1001);
-                }
-            }
-
+            // 2. STATUS BAR COLOR
             if (Build.VERSION.SdkInt >= BuildVersionCodes.Lollipop)
-            {
-                // Sets the status bar to match your dark green primary color
-                Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#1B5E20"));
-            }
+                Window.SetStatusBarColor(Color.ParseColor("#1B5E20"));
 
             CreateNotificationChannel();
             db = new DatabaseHelper(this);
 
-            // CONNECT UI
-            balanceText = FindViewById<TextView>(Resource.Id.balanceText);
-            progressBar = FindViewById<ProgressBar>(Resource.Id.budgetProgress);
-            ListView expenseListView = FindViewById<ListView>(Resource.Id.expenseListView);
-            EditText budgetInput = FindViewById<EditText>(Resource.Id.budgetInput);
-            Button setBudgetBtn = FindViewById<Button>(Resource.Id.setBudgetBtn);
+            // 3. ESSENTIALS BUTTONS
+            Button? btnMonthly = FindViewById<Button>(Resource.Id.btnEssentialMonthly);
+            btnMonthly.Click += (s, e) => {
+                ShowEssentialDialog("MONTHLY");
+            };
 
-            // CATEGORY BUTTONS - Finding them by ID
+            Button? btnWeekly = FindViewById<Button>(Resource.Id.btnEssentialWeekly);
+            btnWeekly.Click += (s, e) => {
+                ShowEssentialDialog("WEEKLY");
+            };
+
+            // 4. CATEGORY BUTTONS
             FindViewById<Button>(Resource.Id.btnHealth).Click += (s, e) => ShowAmountDialog("HEALTH");
             FindViewById<Button>(Resource.Id.btnPets).Click += (s, e) => ShowAmountDialog("PETS");
             FindViewById<Button>(Resource.Id.btnFood).Click += (s, e) => ShowAmountDialog("FOOD");
@@ -65,161 +73,326 @@ namespace AndroidApp1
             FindViewById<Button>(Resource.Id.btnEntertainment).Click += (s, e) => ShowAmountDialog("ENTERTAINMENT");
             FindViewById<Button>(Resource.Id.btnOthers).Click += (s, e) => ShowAmountDialog("OTHERS");
 
-            // Load saved data
-            weeklyBudget = db.GetBudget();
-            RefreshData();
-
-            adapter = new ExpenseAdapter(this, expenseListData);
-            expenseListView.Adapter = adapter;
-            UpdateBalance();
-
-            expenseListView.ItemLongClick += (s, e) => {
-                var item = expenseListData[e.Position];
-
+            Button startNewMonthBtn = FindViewById<Button>(Resource.Id.resetWeekBtn);
+            startNewMonthBtn.Click += (s, e) => {
                 new AlertDialog.Builder(this)
-                    .SetTitle("Delete Expense?")
-                    .SetMessage($"Remove {item.Category} - ₱{item.Amount}?")
-                    .SetPositiveButton("Delete", (sender, args) => {
-                        db.DeleteExpense(item.Id); // Deletes from SQLite
-                        RefreshData();             // Recalculates remainingBalance
-                        UpdateBalance();           // Updates UI colors/progress
-                        adapter.NotifyDataSetChanged(); // Updates the List visually
-                        Toast.MakeText(this, "Expense Deleted", ToastLength.Short).Show();
-                    })
-                    .SetNegativeButton("Cancel", (sender, args) => { })
-                    .Show();
-            };
+                    .SetTitle("End Current Month?")
+                    .SetMessage("A report will be saved to your Downloads folder before clearing data.")
+                    .SetPositiveButton("Export & Clear", (sender, args) => {
+                        string savedFile = ExportReceipt();
 
-            setBudgetBtn.Click += (s, e) =>
-            {
-                if (double.TryParse(budgetInput.Text, out weeklyBudget))
-                {
-                    db.SaveBudget(weeklyBudget);
-                    RefreshData();
-                    UpdateBalance();
-                    Toast.MakeText(this, "Budget Updated", ToastLength.Short).Show();
-                }
-            };
-
-            Button resetBtn = FindViewById<Button>(Resource.Id.resetWeekBtn);
-            resetBtn.Click += (s, e) => {
-                new AlertDialog.Builder(this)
-                    .SetTitle("End of Week")
-                    .SetMessage("Would you like to save a receipt before clearing all data?")
-                    .SetPositiveButton("Save & Reset", (sender, args) => {
-                        string file = ExportReceipt();
-                        if (file != null)
+                        if (savedFile != null)
                         {
-                            Toast.MakeText(this, $"Receipt Saved: {file}", ToastLength.Long).Show();
-                            PerformReset();
+                            db.DeleteAllExpenses();
+                            RefreshData();
+                            UpdateBalance();
+                            adapter.NotifyDataSetChanged();
+                            Toast.MakeText(this, $"Saved: {savedFile}", ToastLength.Long).Show();
                         }
                         else
                         {
-                            Toast.MakeText(this, "Nothing to save!", ToastLength.Short).Show();
+                            Toast.MakeText(this, "Failed to export. Reset cancelled.", ToastLength.Short).Show();
                         }
                     })
-                    .SetNeutralButton("Reset Anyway", (sender, args) => {
-                        PerformReset();
-                    })
-                    .SetNegativeButton("Cancel", (sender, args) => { })
+                    .SetNegativeButton("Cancel", (IDialogInterfaceOnClickListener)null)
                     .Show();
             };
 
-            void PerformReset()
-            {
-                var all = db.GetAllExpenses();
-                foreach (var item in all) db.DeleteExpense(item.Id);
+            // 5. LOAD DATA
+            weeklyBudget = db.GetBudget();
+            monthlyBudget = weeklyBudget * 4;
 
-                lowBalanceNotified = false;
-                RefreshData();
-                UpdateBalance();
-                adapter.NotifyDataSetChanged();
-                Toast.MakeText(this, "Weekly data cleared", ToastLength.Short).Show();
-            }
+            adapter = new ExpenseAdapter(this, expenseListData);
+            expenseListView.Adapter = adapter;
 
             RefreshData();
             UpdateBalance();
+
+            // 6. BUDGET SET BUTTON
+            setBudgetBtn.Click += (s, e) => {
+                if (double.TryParse(budgetInput.Text, out double inputAmount))
+                {
+                    // Now treating input as MONTHLY
+                    monthlyBudget = inputAmount;
+                    weeklyBudget = monthlyBudget / 4;
+
+                    // Save the weekly portion to the database (so your existing logic works)
+                    db.SaveBudget(weeklyBudget);
+
+                    RefreshData();
+                    UpdateBalance();
+
+                    budgetInput.Text = ""; // Clear input
+                    Toast.MakeText(this, "Monthly Allowance Updated", ToastLength.Short).Show();
+                }
+            };
+
+            // 7. LIST VIEW DELETE
+            expenseListView.ItemLongClick += (s, e) => {
+                var item = expenseListData[e.Position];
+                new AlertDialog.Builder(this)
+                    .SetTitle("Delete Expense?")
+                    .SetMessage($"Remove {item.Description}?")
+                    .SetPositiveButton("Delete", (sender, args) => {
+                        db.DeleteExpense(item.Id);
+                        RefreshData();
+                        UpdateBalance();
+                        adapter.NotifyDataSetChanged();
+
+                        ShowDeleteToast($"{item.Description} removed");
+                    })
+                    .SetNegativeButton("Cancel", (IDialogInterfaceOnClickListener)null)
+                    .Show();
+            };
         }
 
+        // --- DIALOG LOGIC ---
         private void ShowAmountDialog(string category)
         {
-            var amounts = new string[] { "10.00 PHP", "15.00 PHP", "20.00 PHP", "25.00 PHP", "50.00 PHP", "200.00 PHP", "500.00", "Custom Amount" };
+            var dialogView = LayoutInflater.Inflate(Resource.Layout.dialog_amount_grid, null);
+            var dialog = new AlertDialog.Builder(this).SetView(dialogView).Create();
 
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.SetTitle($"Select Amount for {category}");
-            builder.SetItems(amounts, (sender, args) =>
+            dialogView.FindViewById<TextView>(Resource.Id.dialogTitle).Text = $"Select Amount for {category}";
+            var grid = dialogView.FindViewById<GridLayout>(Resource.Id.amountGrid);
+            var customBtn = dialogView.FindViewById<Button>(Resource.Id.btnCustomAmount);
+
+            string[] amounts = { "10", "15", "20", "25", "50", "100", "200", "500", "1000" };
+
+            foreach (var amt in amounts)
             {
-                string selected = amounts[args.Which];
+                Button btn = new Button(this);
+                var param = new GridLayout.LayoutParams();
+                param.Width = 0;
+                param.Height = ViewGroup.LayoutParams.WrapContent;
+                param.SetMargins(10, 10, 10, 10);
+                param.ColumnSpec = GridLayout.InvokeSpec(GridLayout.Undefined, 1f);
+                btn.LayoutParameters = param;
 
-                if (selected == "Custom Amount")
-                {
-                    ShowCustomAmountDialog(category);
-                }
-                else
-                {
-                    double val = double.Parse(selected.Split(' ')[0]);
-                    // NEW: Instead of saving immediately, ask for the Name
-                    ShowNameDialog(category, val);
-                }
-            });
-            builder.Show();
+                btn.Text = $"₱{amt}";
+                btn.SetBackgroundColor(Color.ParseColor("#E8F5E9"));
+                btn.SetTextColor(Color.ParseColor("#2E7D32"));
+                btn.SetTypeface(Typeface.Create("sans-serif-medium", TypefaceStyle.Normal), TypefaceStyle.Normal);
+
+                btn.Click += (s, e) => {
+                    dialog.Dismiss();
+                    ShowNameDialog(category, double.Parse(amt));
+                };
+                grid.AddView(btn);
+            }
+
+            customBtn.Click += (s, e) => {
+                dialog.Dismiss();
+                ShowCustomAmountDialog(category);
+            };
+            dialog.Show();
         }
-
         private void ShowCustomAmountDialog(string category)
         {
+            var inputBg = new Android.Graphics.Drawables.GradientDrawable();
+            inputBg.SetCornerRadius(20f);
+            inputBg.SetStroke(3, Color.ParseColor("#E0E0E0"));
+            inputBg.SetColor(Color.ParseColor("#FAFAFA"));
+
             EditText input = new EditText(this)
             {
+                Hint = "0.00",
                 InputType = Android.Text.InputTypes.ClassNumber | Android.Text.InputTypes.NumberFlagDecimal,
-                Hint = "0.00"
+                Background = inputBg
             };
+            input.SetTypeface(Typeface.Create("sans-serif-black", TypefaceStyle.Normal), TypefaceStyle.Normal);
+            input.SetTextSize(Android.Util.ComplexUnitType.Sp, 28); 
+            input.SetTextColor(Color.ParseColor("#2E7D32")); 
+            input.Gravity = GravityFlags.Center;
+            input.SetPadding(30, 40, 30, 40);
+
+            var container = new FrameLayout(this);
+            var lp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
+            lp.SetMargins(60, 40, 60, 40);
+            container.LayoutParameters = lp;
+            container.AddView(input);
 
             new AlertDialog.Builder(this)
-                .SetTitle("Enter Custom Amount")
-                .SetView(input)
-                .SetPositiveButton("Next", (s, e) => {
-                    if (double.TryParse(input.Text, out double val))
-                        ShowNameDialog(category, val); 
+                .SetTitle("Custom Amount")
+                .SetView(container)
+                .SetPositiveButton("NEXT", (s, e) => {
+                    if (double.TryParse(input.Text, out double val)) ShowNameDialog(category, val);
                 })
-                .SetNegativeButton("Cancel", (s, e) => { })
+                .SetNegativeButton("CANCEL", (IDialogInterfaceOnClickListener)null)
                 .Show();
         }
+
         private void ShowNameDialog(string category, double amount)
         {
+            var inputBg = new Android.Graphics.Drawables.GradientDrawable();
+            inputBg.SetCornerRadius(20f);
+            inputBg.SetStroke(3, Color.ParseColor("#E0E0E0"));
+            inputBg.SetColor(Color.ParseColor("#FAFAFA"));
+
             EditText input = new EditText(this)
             {
-                Hint = "Cost Name",
-                InputType = Android.Text.InputTypes.TextFlagCapWords
+                Hint = "What did you buy?",
+                InputType = Android.Text.InputTypes.TextFlagCapWords,
+                Background = inputBg
             };
-            input.SetPadding(50, 40, 50, 40);
+            input.SetTypeface(Typeface.Create("sans-serif-medium", TypefaceStyle.Normal), TypefaceStyle.Normal);
+            input.SetPadding(40, 40, 40, 40);
+
+            var container = new FrameLayout(this);
+            var lp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
+            lp.SetMargins(60, 40, 60, 20);
+            container.LayoutParameters = lp;
+            container.AddView(input);
 
             new AlertDialog.Builder(this)
-                .SetTitle("Item Name")
-                .SetMessage($"What did you buy under {category}?")
-                .SetView(input)
-                .SetPositiveButton("Save", (s, e) => {
+                .SetTitle($"Item for {category}")
+                .SetMessage($"Total: ₱{amount:N2}")
+                .SetView(container)
+                .SetPositiveButton("SAVE", (s, e) => {
                     string title = string.IsNullOrWhiteSpace(input.Text) ? category : input.Text;
-                    SaveExpense(title, category, amount); // Pass title to save
+
+                    SaveExpense(title, category, amount);
+                    ShowSuccessToast($"{title} recorded ✓");
                 })
-                .SetNegativeButton("Back", (s, e) => ShowAmountDialog(category))
+                .SetNegativeButton("BACK", (s, e) => ShowAmountDialog(category))
                 .Show();
+        }
+
+        private void ShowEssentialDialog(string type)
+        {
+            LinearLayout container = new LinearLayout(this);
+            container.Orientation = Orientation.Vertical;
+            container.SetPadding(60, 40, 60, 40);
+
+            var inputBg = new GradientDrawable();
+            inputBg.SetCornerRadius(15f);
+            inputBg.SetStroke(2, Color.ParseColor("#E0E0E0"));
+            inputBg.SetColor(Color.ParseColor("#F9F9F9"));
+
+            // Name Field
+            EditText nameInput = new EditText(this)
+            {
+                Hint = "What is this bill for?",
+                Background = inputBg.GetConstantState().NewDrawable() 
+            };
+            nameInput.SetTypeface(Typeface.Create("sans-serif", TypefaceStyle.Normal), TypefaceStyle.Normal);
+            nameInput.SetPadding(30, 30, 30, 30);
+            EditText amountInput = new EditText(this)
+            {
+                Hint = "0.00",
+                Background = inputBg,
+                InputType = Android.Text.InputTypes.ClassNumber | Android.Text.InputTypes.NumberFlagDecimal
+            };
+            amountInput.SetTypeface(Typeface.Create("sans-serif-black", TypefaceStyle.Normal), TypefaceStyle.Normal);
+            amountInput.SetTextSize(Android.Util.ComplexUnitType.Sp, 24);
+            amountInput.SetTextColor(Color.ParseColor("#2c9e3b"));
+            amountInput.SetPadding(30, 30, 30, 30);
+
+            var spacer = new View(this);
+            spacer.LayoutParameters = new LinearLayout.LayoutParams(1, 30);
+
+            container.AddView(nameInput);
+            container.AddView(spacer);
+            container.AddView(amountInput);
+
+            new AlertDialog.Builder(this)
+                .SetTitle($"Add {type} Essential")
+                .SetView(container)
+                .SetPositiveButton("SAVE", (s, e) => {
+                    if (double.TryParse(amountInput.Text, out double amt))
+                    {
+                        string name = string.IsNullOrWhiteSpace(nameInput.Text) ? "Essential" : nameInput.Text;
+                        SaveExpense($"[{type}] {name}", "ESSENTIAL", amt);
+
+                        // TRIGGER OUR CUSTOM SUCCESS TOAST
+                        ShowSuccessToast($"{name} saved!");
+                    }
+                })
+                .SetNegativeButton("CANCEL", (IDialogInterfaceOnClickListener)null)
+                .Show();
+        }
+
+        private void ShowSuccessToast(string message)
+        {
+            LinearLayout toastLayout = new LinearLayout(this);
+            toastLayout.Orientation = Orientation.Horizontal;
+            toastLayout.SetPadding(40, 20, 40, 20);
+            toastLayout.SetGravity(GravityFlags.CenterVertical);
+
+            var background = new GradientDrawable();
+            background.SetCornerRadius(50f); 
+            background.SetColor(Color.ParseColor("#2E7D32")); 
+            toastLayout.Background = background;
+
+            TextView icon = new TextView(this);
+            icon.Text = "✓";
+            icon.SetTextColor(Color.White);
+            icon.SetTypeface(Typeface.DefaultBold, TypefaceStyle.Bold);
+            icon.SetPadding(0, 0, 20, 0);
+            toastLayout.AddView(icon);
+
+            TextView text = new TextView(this);
+            text.Text = message;
+            text.SetTextColor(Color.White);
+            text.SetTypeface(Typeface.Create("sans-serif-medium", TypefaceStyle.Normal), TypefaceStyle.Normal);
+            toastLayout.AddView(text);
+
+            Toast customToast = new Toast(this);
+            customToast.Duration = ToastLength.Short;
+            customToast.View = toastLayout;
+            customToast.Show();
+        }
+        private void ShowDeleteToast(string message)
+        {
+            LinearLayout toastLayout = new LinearLayout(this);
+            toastLayout.Orientation = Orientation.Horizontal;
+            toastLayout.SetPadding(40, 20, 40, 20);
+            toastLayout.SetGravity(GravityFlags.CenterVertical);
+
+            var background = new GradientDrawable();
+            background.SetCornerRadius(50f);
+            background.SetColor(Color.ParseColor("#D32F2F")); // Material Red
+            toastLayout.Background = background;
+
+            TextView icon = new TextView(this);
+            icon.Text = "✕"; // Delete cross
+            icon.SetTextColor(Color.White);
+            icon.SetTypeface(Typeface.DefaultBold, TypefaceStyle.Bold);
+            icon.SetPadding(0, 0, 20, 0);
+            toastLayout.AddView(icon);
+
+            TextView text = new TextView(this);
+            text.Text = message;
+            text.SetTextColor(Color.White);
+            text.SetTypeface(Typeface.Create("sans-serif-medium", TypefaceStyle.Normal), TypefaceStyle.Normal);
+            toastLayout.AddView(text);
+
+            Toast deleteToast = new Toast(this);
+            deleteToast.Duration = ToastLength.Short;
+            deleteToast.View = toastLayout;
+            deleteToast.Show();
+
+            // Small vibration for deletion
+            Vibrator vibrator = (Vibrator)GetSystemService(Context.VibratorService);
+            vibrator.Vibrate(VibrationEffect.CreateOneShot(30, VibrationEffect.DefaultAmplitude));
         }
 
         private void SaveExpense(string title, string category, double amount)
         {
             Expense newExp = new Expense
             {
-                Description = title, // Mapping the name to Description
+                Description = title,
                 Amount = amount,
                 Category = category,
                 Date = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture)
             };
-
             db.AddExpense(newExp);
             RefreshData();
             UpdateBalance();
             adapter.NotifyDataSetChanged();
             Toast.MakeText(this, $"Saved {title} (₱{amount})", ToastLength.Short).Show();
         }
+
+        // --- CALCULATION LOGIC ---
 
         void RefreshData()
         {
@@ -228,56 +401,50 @@ namespace AndroidApp1
             expenseListData.AddRange(allExpenses);
 
             double totalToday = 0;
-            remainingBalance = weeklyBudget;
-
-            // Get today's date at midnight (00:00:00) for a clean comparison
+            double totalSpentThisMonth = 0;
+            remainingWeekly = weeklyBudget;
             DateTime today = DateTime.Today;
 
             foreach (var exp in allExpenses)
             {
-                remainingBalance -= exp.Amount;
+                totalSpentThisMonth += exp.Amount;
+                bool isMonthlyEssential = exp.Category == "ESSENTIAL" && exp.Description.Contains("[MONTHLY]");
+
+                if (!isMonthlyEssential)
+                {
+                    remainingWeekly -= exp.Amount;
+                }
 
                 if (DateTime.TryParse(exp.Date, out DateTime expenseDate))
                 {
-                    if (expenseDate.Date == today)
-                    {
-                        totalToday += exp.Amount;
-                    }
-                }
-                else
-                {
-                    string todayStr = today.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-                    if (exp.Date != null && exp.Date.Trim().StartsWith(todayStr))
-                    {
-                        totalToday += exp.Amount;
-                    }
+                    if (expenseDate.Date == today) totalToday += exp.Amount;
                 }
             }
-
-            // Update UI
-            if (spentTodayText != null)
-            {
-                spentTodayText.Text = $"₱{totalToday:F2}";
-            }
+            remainingMonthly = monthlyBudget - totalSpentThisMonth;
+            if (spentTodayText != null) spentTodayText.Text = $"PHP {totalToday:F2}";
         }
 
         void UpdateBalance()
         {
-            balanceText.Text = $"Remaining: ₱{remainingBalance:F2}";
-            if (weeklyBudget > 0)
-            {
-                int progress = (int)((remainingBalance / weeklyBudget) * 100);
-                progressBar.Progress = Math.Max(0, progress);
+            monthlyBalanceText.Text = $"PHP {remainingMonthly:N2}";
+            weeklyBalanceText.Text = $"PHP {remainingWeekly:N2}";
 
-                if (progress >= 50) balanceText.SetTextColor(Color.ParseColor("#4CAF50"));
-                else if (progress >= 20) balanceText.SetTextColor(Color.ParseColor("#FFC107"));
+            if (monthlyBudget > 0)
+            {
+                int progress = (int)((remainingMonthly / monthlyBudget) * 100);
+                progressBar.Progress = Math.Clamp(progress, 0, 100);
+
+                if (progress >= 50)
+                    monthlyBalanceText.SetTextColor(Color.ParseColor("#2E7D32")); // Green
+                else if (progress >= 20)
+                    monthlyBalanceText.SetTextColor(Color.ParseColor("#FFC107")); // Amber
                 else
                 {
-                    balanceText.SetTextColor(Color.ParseColor("#F44336"));
-                    if (!lowBalanceNotified)
+                    monthlyBalanceText.SetTextColor(Color.ParseColor("#F44336")); // Red
+                    if (!lowBalanceNotified && remainingMonthly < (monthlyBudget * 0.1)) // Notify at 10%
                     {
                         lowBalanceNotified = true;
-                        ShowLowBudgetNotification(remainingBalance);
+                        ShowLowBudgetNotification(remainingMonthly);
                     }
                 }
             }
@@ -322,11 +489,15 @@ namespace AndroidApp1
             try
             {
                 var allExpenses = db.GetAllExpenses();
-                if (allExpenses.Count == 0) return null;
+                if (allExpenses == null || allExpenses.Count == 0)
+                {
+                    RunOnUiThread(() => Toast.MakeText(this, "No data to export!", ToastLength.Short).Show());
+                    return null;
+                }
 
                 System.Text.StringBuilder receipt = new System.Text.StringBuilder();
                 receipt.AppendLine("============================");
-                receipt.AppendLine("      MYBUDGET RECEIPT      ");
+                receipt.AppendLine("      MYBUDGET REPORT       "); // Renamed to Report
                 receipt.AppendLine($"   Date: {DateTime.Now:MMMM dd, yyyy}");
                 receipt.AppendLine("============================");
                 receipt.AppendLine(string.Format("{0,-15} {1,10}", "ITEM", "AMOUNT"));
@@ -335,6 +506,7 @@ namespace AndroidApp1
                 double total = 0;
                 foreach (var exp in allExpenses)
                 {
+                    // Truncate long descriptions to keep columns aligned
                     string desc = exp.Description.Length > 15 ? exp.Description.Substring(0, 12) + "..." : exp.Description;
                     receipt.AppendLine(string.Format("{0,-15} ₱{1,10:F2}", desc, exp.Amount));
                     total += exp.Amount;
@@ -343,13 +515,20 @@ namespace AndroidApp1
                 receipt.AppendLine("----------------------------");
                 receipt.AppendLine(string.Format("{0,-15} ₱{1,10:F2}", "TOTAL SPENT", total));
                 receipt.AppendLine("============================");
-                receipt.AppendLine("   End of Weekly Report   ");
+                receipt.AppendLine("   End of Monthly Report    "); // Changed from Weekly to Monthly
+                receipt.AppendLine("============================");
 
-                // Save to Downloads folder
-                string filename = $"Receipt_{DateTime.Now:yyyyMMdd_HHmm}.txt";
-                string path = System.IO.Path.Combine(Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads).AbsolutePath, filename);
+                // 1. Create unique filename using Month and Year
+                string filename = $"Budget_Report_{DateTime.Now:MMM_yyyy_HHmm}.txt";
 
+                // 2. Get the Downloads folder path
+                string path = System.IO.Path.Combine(
+                    Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads).AbsolutePath,
+                    filename);
+
+                // 3. Write the file
                 System.IO.File.WriteAllText(path, receipt.ToString());
+
                 return filename;
             }
             catch (Exception ex)

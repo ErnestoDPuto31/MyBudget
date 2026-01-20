@@ -35,29 +35,47 @@
                 android:layout_marginBottom="25dp" />
 
 			<LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="@drawable/card_bg"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:elevation="8dp"
-    android:layout_marginBottom="20dp"
-    android:outlineProvider="background">
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/card_bg"
+                android:orientation="vertical"
+                android:padding="24dp"
+                android:elevation="8dp"
+                android:layout_marginBottom="20dp">
 
 				<TextView
 					android:layout_width="wrap_content"
 					android:layout_height="wrap_content"
-					android:text="REMAINING BALANCE"
+					android:text="REMAINING MONTHLY BALANCE"
 					android:textSize="12sp"
 					android:textStyle="bold"
 					android:textColor="#757575" />
 
 				<TextView
-					android:id="@+id/balanceText"
+					android:id="@+id/monthlyBalanceText"
 					android:layout_width="match_parent"
 					android:layout_height="wrap_content"
-					android:text="₱0.00"
-					android:textSize="36sp"
+					android:text="PHP 8,000.00"
+					android:textSize="32sp"
+					android:fontFamily="sans-serif-black"
+					android:textColor="#2E7D32"
+					android:layout_marginTop="4dp"/>
+
+				<TextView
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:text="REMAINING THIS WEEK BALANCE"
+					android:textSize="12sp"
+					android:textStyle="bold"
+					android:textColor="#757575"
+					android:layout_marginTop="12dp"/>
+
+				<TextView
+					android:id="@+id/weeklyBalanceText"
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content"
+					android:text="PHP 2,000.00"
+					android:textSize="28sp"
 					android:fontFamily="sans-serif-black"
 					android:textColor="#2E7D32"
 					android:layout_marginTop="4dp"/>
@@ -72,7 +90,7 @@
 						android:layout_width="0dp"
 						android:layout_height="wrap_content"
 						android:layout_weight="1"
-						android:text="SPENT TODAY"
+						android:text="SPENT TODAY:"
 						android:textSize="12sp"
 						android:textStyle="bold"
 						android:textColor="#9E9E9E" />
@@ -81,9 +99,9 @@
 						android:id="@+id/spentTodayText"
 						android:layout_width="wrap_content"
 						android:layout_height="wrap_content"
-						android:text="₱0.00"
-						android:textSize="14sp"
-						android:textColor="#1B5E20"
+						android:text="PHP 75.00"
+						android:textSize="12sp"
+						android:textColor="#424242"
 						android:fontFamily="sans-serif-medium"/>
 				</LinearLayout>
 
@@ -92,51 +110,93 @@
 					style="?android:attr/progressBarStyleHorizontal"
 					android:layout_width="match_parent"
 					android:layout_height="8dp"
-					android:progress="0"
+					android:progress="70"
 					android:max="100"
-					android:layout_marginTop="15dp"
+					android:layout_marginTop="8dp"
 					android:progressTint="#2E7D32"
-					android:progressBackgroundTint="#E0E0E0"/>
+					android:progressBackgroundTint="#757575"/>
 			</LinearLayout>
 
 			<LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="24dp">
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:orientation="horizontal"
+				android:gravity="center_vertical"
+				android:layout_marginBottom="24dp">
 
 				<EditText
-                    android:id="@+id/budgetInput"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
-                    android:layout_weight="1"
-                    android:hint="Update Weekly Limit"
-                    android:paddingLeft="15dp"
-                    android:textColor="#212121"
-                    android:textColorHint="#9E9E9E"
-                    android:background="@drawable/card_bg"
-                    android:elevation="2dp"
-                    android:inputType="numberDecimal" />
+					android:id="@+id/budgetInput"
+					android:layout_width="0dp"
+					android:layout_height="50dp"
+					android:layout_weight="1"
+					android:hint="Set Monthly Allowance"
+					android:paddingLeft="15dp"
+					android:textColor="#212121"
+					android:textColorHint="#9E9E9E"
+					android:background="@drawable/card_bg"
+					android:elevation="2dp"
+					android:inputType="numberDecimal" />
 
 				<Button
-                    android:id="@+id/setBudgetBtn"
-                    android:layout_width="80dp"
-                    android:layout_height="50dp"
-                    android:text="SET"
-                    android:fontFamily="sans-serif-medium"
-                    android:backgroundTint="#3F51B5"
-                    android:textColor="#FFFFFF"
-                    android:layout_marginStart="12dp"
-                    android:elevation="4dp" />
+					android:id="@+id/setBudgetBtn"
+					android:layout_width="80dp"
+					android:layout_height="50dp"
+					android:text="SET"
+					android:fontFamily="sans-serif-medium"
+					android:background="@drawable/rounded_green_bg"
+					android:textColor="#FFFFFF"
+					android:layout_marginStart="12dp"
+					android:elevation="4dp" />
+			</LinearLayout>
+
+			<TextView
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:text="ESSENTIALS"
+				android:textStyle="bold"
+				android:textSize="14sp"
+				android:textColor="#212121"
+				android:layout_marginBottom="12dp"/>
+
+			<LinearLayout
+				android:layout_width="match_parent"
+				android:layout_height="80dp"
+				android:orientation="horizontal"
+				android:layout_marginBottom="24dp">
+
+				<Button
+					android:id="@+id/btnEssentialMonthly"
+					android:layout_width="0dp"
+					android:layout_height="match_parent"
+					android:layout_weight="1"
+					android:layout_marginEnd="10dp"
+					android:background="@drawable/card_bg"
+					android:backgroundTint="#4A90E2"
+					android:fontFamily="sans-serif-black"
+					android:text="MONTHLY"
+					android:textColor="#FFFFFF"
+					android:textSize="20sp" />
+
+				<Button
+					android:id="@+id/btnEssentialWeekly"
+					android:layout_width="0dp"
+					android:layout_height="match_parent"
+					android:layout_weight="1"
+					android:layout_marginStart="10dp"
+					android:background="@drawable/card_bg"
+					android:backgroundTint="#BD70E6"
+					android:fontFamily="sans-serif-black"
+					android:text="WEEKLY"
+					android:textColor="#FFFFFF"
+					android:textSize="20sp" />
 			</LinearLayout>
 
 			<TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Quick Log"
+                android:text="QUICK DAILY LOG"
                 android:textStyle="bold"
-                android:textSize="18sp"
+                android:textSize="14sp"
                 android:textColor="#212121"
                 android:layout_marginBottom="12dp"/>
 
@@ -158,9 +218,9 @@
 			<TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Recent Transactions"
+                android:text="RECENT TRANSACTIONS"
                 android:textStyle="bold"
-                android:textSize="18sp"
+                android:textSize="14sp"
                 android:textColor="#212121"
                 android:layout_marginTop="24dp"
                 android:layout_marginBottom="12dp"/>
@@ -185,16 +245,16 @@
 			</LinearLayout>
 
 			<Button
-                android:id="@+id/resetWeekBtn"
-                android:layout_width="match_parent"
-                android:layout_height="55dp"
-                android:text="START NEW WEEK"
-                android:backgroundTint="#FFEBEE"
-                android:textColor="#D32F2F"
-                android:layout_marginTop="20dp"
-                android:layout_marginBottom="40dp"
-                android:elevation="0dp"
-                android:fontFamily="sans-serif-medium" />
+				android:id="@+id/resetWeekBtn"
+				android:layout_width="match_parent"
+				android:layout_height="55dp"
+				android:text="START NEW MONTH"
+				android:backgroundTint="#FFEBEE"
+				android:textColor="#D32F2F"
+				android:layout_marginTop="20dp"
+				android:layout_marginBottom="40dp"
+				android:elevation="0dp"
+				android:fontFamily="sans-serif-medium" />
 
 		</LinearLayout>
 	</ScrollView>

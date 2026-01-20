@@ -119,4 +119,9 @@ public class DatabaseHelper : SQLiteOpenHelper
         SQLiteDatabase db = WritableDatabase;
         db.Delete(TABLE_EXPENSES, $"{COL_ID} = ?", new string[] { id.ToString() });
     }
+    public void DeleteAllExpenses()
+    {
+        SQLiteDatabase db = WritableDatabase;
+        db.Delete(TABLE_EXPENSES, null, null);
+    }
 }

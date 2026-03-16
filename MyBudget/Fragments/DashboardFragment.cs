@@ -2,6 +2,7 @@
 using Android.Views;
 using AndroidX.RecyclerView.Widget;
 using Google.Android.Material.FloatingActionButton;
+using MyBudget.Adapters;
 using MyBudget.Models;
 using MyBudget.Services;
 
@@ -9,63 +10,51 @@ namespace MyBudget.Fragments
 {
     public class DashboardFragment : AndroidX.Fragment.App.Fragment
     {
-        private TextView? tvDailyLimit, tvTodaySpent, tvPeriodLabel, tvPeriodAmount, tvPeriodSpent;
-        private ProgressBar? progressDaily;
-        private FloatingActionButton? fabAddExpense;
         private DatabaseService? _dbService;
+        private ExpenseAdapter? _expenseAdapter;
         private RecyclerView? rvRecentExpenses;
-        private Adapters.ExpenseAdapter? expenseAdapter;
 
-        public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+        private TextView? tvDate, tvDailyLimit, tvTodaySpent, tvRemainingToday, tvProgressPercent;
+        private TextView? tvMonthlyBudget, tvMonthlySpent, tvAvgDaily, tvAvgTrend, tvWarningText;
+        private ProgressBar? progressDaily, progressMonthly;
+        private LinearLayout? layoutWarning;
+        private FloatingActionButton? fabAddExpense;
+
+        public override View? OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            View view = inflater.Inflate(MyBudget.Resource.Layout.fragment_dashboard, container, false);
+            View view = inflater.Inflate(Resource.Layout.fragment_dashboard, container, false);
             _dbService = new DatabaseService();
-
-            tvDailyLimit = view.FindViewById<TextView>(MyBudget.Resource.Id.tvDailyLimit);
-            tvTodaySpent = view.FindViewById<TextView>(MyBudget.Resource.Id.tvTodaySpent);
-            tvPeriodLabel = view.FindViewById<TextView>(MyBudget.Resource.Id.tvPeriodLabel);
-            tvPeriodAmount = view.FindViewById<TextView>(MyBudget.Resource.Id.tvPeriodAmount);
-            tvPeriodSpent = view.FindViewById<TextView>(MyBudget.Resource.Id.tvPeriodSpent);
-            progressDaily = view.FindViewById<ProgressBar>(MyBudget.Resource.Id.progressDaily);
-            fabAddExpense = view.FindViewById<FloatingActionButton>(MyBudget.Resource.Id.fabAddExpense);
 
             rvRecentExpenses = view.FindViewById<RecyclerView>(Resource.Id.rvRecentExpenses);
             rvRecentExpenses.SetLayoutManager(new LinearLayoutManager(Context));
-            expenseAdapter = new Adapters.ExpenseAdapter(new List<Expense>());
-            rvRecentExpenses.SetAdapter(expenseAdapter);
+            _expenseAdapter = new ExpenseAdapter(new List<Expense>());
+            rvRecentExpenses.SetAdapter(_expenseAdapter);
 
-            fabAddExpense.Click += (sender, e) =>
-            {
-                var intent = new Android.Content.Intent(RequireActivity(), typeof(AddExpenseActivity));
-                StartActivity(intent);
+            tvDate = view.FindViewById<TextView>(Resource.Id.tvDate);
+            tvDailyLimit = view.FindViewById<TextView>(Resource.Id.tvDailyLimit);
+            tvTodaySpent = view.FindViewById<TextView>(Resource.Id.tvTodaySpent);
+            tvRemainingToday = view.FindViewById<TextView>(Resource.Id.tvRemainingToday);
+            tvProgressPercent = view.FindViewById<TextView>(Resource.Id.tvProgressPercent);
+
+            tvMonthlyBudget = view.FindViewById<TextView>(Resource.Id.tvMonthlyBudget);
+            tvMonthlySpent = view.FindViewById<TextView>(Resource.Id.tvMonthlySpent);
+            tvAvgDaily = view.FindViewById<TextView>(Resource.Id.tvAvgDaily);
+            tvAvgTrend = view.FindViewById<TextView>(Resource.Id.tvAvgTrend);
+            tvWarningText = view.FindViewById<TextView>(Resource.Id.tvWarningText);
+
+            progressDaily = view.FindViewById<ProgressBar>(Resource.Id.progressDaily);
+            progressMonthly = view.FindViewById<ProgressBar>(Resource.Id.progressMonthly);
+            layoutWarning = view.FindViewById<LinearLayout>(Resource.Id.layoutWarning);
+
+            fabAddExpense = view.FindViewById<FloatingActionButton>(Resource.Id.fabAddExpense);
+
+            tvDate.Text = DateTime.Now.ToString("dddd, MMMM d, yyyy");
+
+            fabAddExpense.Click += (s, e) => {
+                StartActivity(new Intent(Context, typeof(AddExpenseActivity)));
             };
 
-            expenseAdapter.ItemClick += (s, data) => {
-                var ctx = Context ?? RequireActivity();
-                var menu = new PopupMenu(ctx, data.view);
-
-                menu.MenuItemClick += async (send, args) => {
-                    var title = args.Item.TitleFormatted.ToString();
-
-                    if (title == "Delete")
-                    {
-                        if (data.expense != null && _dbService != null)
-                        {
-                            await _dbService.DeleteExpenseAsync(data.expense);
-                            await LoadDashboardDataAsync();
-                        }
-                    }
-                    else
-                    {
-                        var intent = new Android.Content.Intent(ctx, typeof(AddExpenseActivity));
-                        intent.PutExtra("ExpenseId", data.expense.Id);
-                        StartActivity(intent);
-                    }
-                };
-                menu.Menu.Add("Edit");
-                menu.Menu.Add("Delete");
-                menu.Show();
-            };
+            _expenseAdapter.ItemClick += OnExpenseClicked;
 
             return view;
         }
@@ -73,65 +62,98 @@ namespace MyBudget.Fragments
         public override async void OnResume()
         {
             base.OnResume();
-            try
-            {
-                await LoadDashboardDataAsync();
-            }
-            catch (Exception ex)
-            {
-                Activity?.RunOnUiThread(() =>
-                {
-                    Toast.MakeText(RequireActivity(), $"Crash Prevented: {ex.Message}", ToastLength.Long).Show();
-                });
-            }
+            await LoadDashboardDataAsync();
         }
 
         private async Task LoadDashboardDataAsync()
         {
-            var settings = await _dbService.GetBudgetSettingsAsync();
             var allExpenses = await _dbService.GetExpensesAsync();
+            var settings = await _dbService.GetBudgetSettingsAsync();
 
-            int daysDivider = settings.Period == BudgetPeriod.Weekly ? 7 : 30;
-            decimal dailyLimit = settings.Amount / daysDivider;
+            decimal budgetLimit = settings?.Amount ?? 20000m;
+            bool isWeekly = settings?.Period == BudgetPeriod.Weekly;
 
-            var today = DateTime.Today;
-            decimal todaySpent = allExpenses
-                .Where(e => e.Date.Date == today)
-                .Sum(e => e.Amount);
+            int daysInPeriod = isWeekly ? 7 : DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
+            decimal dailyLimit = budgetLimit / daysInPeriod;
 
-            DateTime periodStart = settings.Period == BudgetPeriod.Weekly
-                ? today.AddDays(-(int)today.DayOfWeek)
-                : new DateTime(today.Year, today.Month, 1);
+            var todayExpenses = allExpenses.Where(e => e.Date.Date == DateTime.Today).ToList();
+            var periodExpenses = isWeekly
+                ? allExpenses.Where(e => e.Date >= DateTime.Now.AddDays(-7)).ToList() 
+                : allExpenses.Where(e => e.Date.Month == DateTime.Now.Month && e.Date.Year == DateTime.Now.Year).ToList();
 
-            decimal periodSpent = allExpenses
-                .Where(e => e.Date >= periodStart)
-                .Sum(e => e.Amount);
+            decimal spentToday = todayExpenses.Sum(e => e.Amount);
+            decimal spentPeriod = periodExpenses.Sum(e => e.Amount);
+            decimal remainingToday = Math.Max(0, dailyLimit - spentToday);
 
-            var recentExpenses = allExpenses.OrderByDescending(e => e.Date).Take(5).ToList();
-
+            int elapsedDays = isWeekly ? ((int)DateTime.Now.DayOfWeek == 0 ? 7 : (int)DateTime.Now.DayOfWeek) : DateTime.Now.Day;
+            decimal avgDaily = elapsedDays > 0 ? spentPeriod / elapsedDays : spentPeriod;
 
             RequireActivity().RunOnUiThread(() =>
             {
-                tvDailyLimit.Text = $"Daily limit: ₱{dailyLimit:N2}";
-                tvTodaySpent.Text = $"₱{todaySpent:N2}";
+                string periodLabel = isWeekly ? "Weekly Budget" : "Monthly Budget";
 
-                tvPeriodLabel.Text = settings.Period == BudgetPeriod.Weekly ? "Weekly Budget" : "Monthly Budget";
-                tvPeriodAmount.Text = $"₱{settings.Amount:N2}";
-                tvPeriodSpent.Text = $"₱{periodSpent:N2}";
+                tvMonthlyBudget.Text = $"₱ {budgetLimit:N0}";
+                tvMonthlySpent.Text = $"₱ {spentPeriod:N2} spent this {(isWeekly ? "week" : "month")}";
 
-                int progressPercentage = dailyLimit > 0 ? (int)((todaySpent / dailyLimit) * 100) : 0;
-                progressDaily.Progress = Math.Min(progressPercentage, 100);
+                tvDailyLimit.Text = $"Daily limit: ₱ {dailyLimit:N2}";
+                tvTodaySpent.Text = $"₱ {spentToday:N2}";
+                tvRemainingToday.Text = $"₱ {remainingToday:N2}";
 
-                if (expenseAdapter == null)
+                int dailyPercent = dailyLimit > 0 ? (int)((spentToday / dailyLimit) * 100) : 0;
+                progressDaily.Progress = Math.Min(dailyPercent, 100);
+                tvProgressPercent.Text = $"{dailyPercent}% of daily budget used";
+
+                if (spentToday > dailyLimit)
                 {
-                    expenseAdapter = new Adapters.ExpenseAdapter(recentExpenses);
-                    rvRecentExpenses.SetAdapter(expenseAdapter);
+                    layoutWarning.Visibility = ViewStates.Visible;
+                    tvWarningText.Text = $"You've exceeded your daily limit by ₱ {(spentToday - dailyLimit):N2}";
                 }
                 else
                 {
-                    expenseAdapter.UpdateData(recentExpenses);
+                    layoutWarning.Visibility = ViewStates.Gone;
                 }
+
+                int periodPercent = budgetLimit > 0 ? (int)((spentPeriod / budgetLimit) * 100) : 0;
+                progressMonthly.Progress = Math.Min(periodPercent, 100);
+
+                tvAvgDaily.Text = $"₱ {avgDaily:N2}";
+                if (avgDaily > dailyLimit)
+                {
+                    tvAvgTrend.Text = "↗ Over budget";
+                    tvAvgTrend.SetTextColor(Android.Graphics.Color.ParseColor("#DC2626"));
+                }
+                else
+                {
+                    tvAvgTrend.Text = "↘ On track";
+                    tvAvgTrend.SetTextColor(Android.Graphics.Color.ParseColor("#059669"));
+                }
+
+                var recentList = allExpenses.OrderByDescending(e => e.Date).Take(5).ToList();
+                _expenseAdapter.UpdateData(recentList);
             });
+        }
+
+        private void OnExpenseClicked(object sender, (Expense expense, View view) data)
+        {
+            var ctx = Context ?? RequireActivity();
+            var menu = new PopupMenu(ctx, data.view);
+            menu.MenuItemClick += async (send, args) =>
+            {
+                if (args.Item.TitleFormatted.ToString() == "Delete")
+                {
+                    await _dbService.DeleteExpenseAsync(data.expense);
+                    await LoadDashboardDataAsync();
+                }
+                else
+                {
+                    var intent = new Intent(ctx, typeof(AddExpenseActivity));
+                    intent.PutExtra("ExpenseId", data.expense.Id);
+                    StartActivity(intent);
+                }
+            };
+            menu.Menu.Add("Edit");
+            menu.Menu.Add("Delete");
+            menu.Show();
         }
     }
 }

@@ -1,55 +1,48 @@
 ﻿using Android.Views;
 using AndroidX.RecyclerView.Widget;
 using Google.Android.Material.Card;
-using MyBudget.Models;
+using MyBudget.Fragments;
 using Android.Graphics;
 
 namespace MyBudget.Adapters
 {
-    public class ExpenseAdapter : RecyclerView.Adapter
+    public class CategoryBreakdownAdapter : RecyclerView.Adapter
     {
-        public List<Expense> Expenses { get; private set; }
-        public event EventHandler<(Expense expense, View view)> ItemClick;
+        public List<StatisticsFragment.CategorySummary> Summaries { get; private set; }
 
-        public ExpenseAdapter(List<Expense> expenses)
+        public CategoryBreakdownAdapter(List<StatisticsFragment.CategorySummary> summaries)
         {
-            Expenses = expenses;
+            Summaries = summaries;
         }
 
-        public void UpdateData(List<Expense> newExpenses)
+        public void UpdateData(List<StatisticsFragment.CategorySummary> newSummaries)
         {
-            Expenses = newExpenses;
+            Summaries = newSummaries;
             NotifyDataSetChanged();
         }
 
         public override RecyclerView.ViewHolder OnCreateViewHolder(ViewGroup parent, int viewType)
         {
             View itemView = LayoutInflater.From(parent.Context).Inflate(Resource.Layout.item_expense, parent, false);
-            return new ExpenseViewHolder(itemView);
+            return new SummaryViewHolder(itemView);
         }
 
         public override void OnBindViewHolder(RecyclerView.ViewHolder holder, int position)
         {
-            if (holder is ExpenseViewHolder vh)
+            if (holder is SummaryViewHolder vh)
             {
-                var expense = Expenses[position];
+                var summary = Summaries[position];
 
-
-                vh.ExpenseName.Text = expense.Name;
-                vh.ExpenseDateCategory.Text = $"{expense.Date.ToString("MMM dd")} • {expense.Category}";
-                vh.ExpenseAmount.Text = $"-₱{expense.Amount:N2}"; 
-
-                SetCategoryStyle(vh, expense.Category);
-
-                vh.ItemView.Click -= Vh_ItemClick; 
-                void Vh_ItemClick(object sender, EventArgs e) => ItemClick?.Invoke(this, (expense, vh.ItemView));
-                vh.ItemView.Click += Vh_ItemClick;
+                vh.ExpenseName.Text = summary.CategoryName;
+                vh.ExpenseDateCategory.Text = $"{summary.PercentageOfTotal:F1}% of total spending";
+                vh.ExpenseAmount.Text = $"₱{summary.TotalAmount:N2}";
+                SetCategoryStyle(vh, summary.CategoryName);
             }
         }
 
-        public override int ItemCount => Expenses?.Count ?? 0;
+        public override int ItemCount => Summaries?.Count ?? 0;
 
-        private void SetCategoryStyle(ExpenseViewHolder vh, string category)
+        private void SetCategoryStyle(SummaryViewHolder vh, string category)
         {
             string bgColorHex;
             string iconTintHex;
@@ -74,7 +67,7 @@ namespace MyBudget.Adapters
             vh.IconCategory.SetColorFilter(Color.ParseColor(iconTintHex));
         }
 
-        public class ExpenseViewHolder : RecyclerView.ViewHolder
+        public class SummaryViewHolder : RecyclerView.ViewHolder
         {
             public MaterialCardView CardCategoryIcon { get; }
             public ImageView IconCategory { get; }
@@ -82,7 +75,7 @@ namespace MyBudget.Adapters
             public TextView ExpenseDateCategory { get; }
             public TextView ExpenseAmount { get; }
 
-            public ExpenseViewHolder(View itemView) : base(itemView)
+            public SummaryViewHolder(View itemView) : base(itemView)
             {
                 CardCategoryIcon = itemView.FindViewById<MaterialCardView>(Resource.Id.cardCategoryIcon);
                 IconCategory = itemView.FindViewById<ImageView>(Resource.Id.ivCategoryIcon);

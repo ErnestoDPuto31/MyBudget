@@ -1,74 +1,130 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/background"
-    android:padding="16dp">
-
-	<TextView
+    android:fillViewport="true"
+    android:background="#F0FDF4">
+	<LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Spending Analytics"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textColor="@color/primaryDark"
-        android:layout_marginBottom="16dp" />
+        android:orientation="vertical"
+        android:padding="20dp">
 
-	<androidx.cardview.widget.CardView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="4dp"
-        app:cardBackgroundColor="@color/primary"
-        android:layout_marginBottom="24dp">
-
-		<LinearLayout
-            android:layout_width="match_parent"
+		<TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="20dp"
-            android:gravity="center">
+            android:text="Statistics"
+            android:textColor="#047857"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+		<TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Insights into your spending patterns"
+            android:textColor="#6B7280"
+            android:textSize="14sp"
+            android:layout_marginBottom="20dp"/>
 
-			<TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Total Expenses"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp" />
+		<LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:baselineAligned="false" android:layout_marginBottom="16dp">
 
-			<TextView
-                android:id="@+id/statsTotalAmount"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="$0.00"
-                android:textColor="#FFFFFF"
-                android:textSize="36sp"
-                android:textStyle="bold"
-                android:layout_marginTop="8dp"/>
+			<com.google.android.material.card.MaterialCardView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="8dp" app:cardCornerRadius="16dp" app:cardElevation="2dp" app:cardBackgroundColor="@android:color/white">
+				<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="16dp">
+					<LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="center_vertical">
+						<ImageView android:layout_width="16dp" android:layout_height="16dp" android:src="@android:drawable/ic_menu_today" app:tint="#6B7280" android:layout_marginEnd="8dp"/>
+						<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="This Month" android:textColor="#6B7280" android:textSize="12sp" />
+					</LinearLayout>
+					<TextView android:id="@+id/tvMonthTotal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="₱0.00" android:textColor="#047857" android:textSize="24sp" android:textStyle="bold" android:layout_marginTop="16dp"/>
+					<TextView android:id="@+id/tvMonthCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0 expenses" android:textColor="#6B7280" android:textSize="10sp" android:layout_marginTop="4dp" />
+				</LinearLayout>
+			</com.google.android.material.card.MaterialCardView>
+
+			<com.google.android.material.card.MaterialCardView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="8dp" app:cardCornerRadius="16dp" app:cardElevation="2dp" app:cardBackgroundColor="@android:color/white">
+				<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="16dp">
+					<LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="center_vertical">
+						<ImageView android:layout_width="16dp" android:layout_height="16dp" android:src="@android:drawable/ic_menu_directions" app:tint="#6B7280" android:layout_marginEnd="8dp"/>
+						<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Daily Average" android:textColor="#6B7280" android:textSize="12sp" />
+					</LinearLayout>
+					<TextView android:id="@+id/tvDailyAverage" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="₱0.00" android:textColor="#047857" android:textSize="24sp" android:textStyle="bold" android:layout_marginTop="16dp"/>
+					<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="This month" android:textColor="#6B7280" android:textSize="10sp" android:layout_marginTop="4dp" />
+				</LinearLayout>
+			</com.google.android.material.card.MaterialCardView>
 		</LinearLayout>
-	</androidx.cardview.widget.CardView>
 
-	<TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Category Breakdown"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:textColor="@color/foreground"
-        android:layout_marginBottom="12dp" />
+		<LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:baselineAligned="false" android:layout_marginBottom="16dp">
 
-	<ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
+			<com.google.android.material.card.MaterialCardView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="8dp" app:cardCornerRadius="16dp" app:cardElevation="2dp" app:cardBackgroundColor="@android:color/white">
+				<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="16dp">
+					<LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="center_vertical">
+						<ImageView android:id="@+id/ivTopCategoryIcon" android:layout_width="16dp" android:layout_height="16dp" android:src="@android:drawable/ic_menu_gallery" app:tint="#6B7280" android:layout_marginEnd="8dp"/>
+						<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Top Category" android:textColor="#6B7280" android:textSize="12sp" />
+					</LinearLayout>
+					<TextView android:id="@+id/tvTopCategoryName" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="-" android:textColor="#047857" android:textSize="20sp" android:textStyle="bold" android:layout_marginTop="16dp" android:singleLine="false"/>
+					<TextView android:id="@+id/tvTopCategoryAmount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="₱0.00" android:textColor="#6B7280" android:textSize="10sp" android:layout_marginTop="4dp" />
+				</LinearLayout>
+			</com.google.android.material.card.MaterialCardView>
 
-		<LinearLayout
-            android:id="@+id/categoryContainer"
+			<com.google.android.material.card.MaterialCardView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="8dp" app:cardCornerRadius="16dp" app:cardElevation="2dp" app:cardBackgroundColor="@android:color/white">
+				<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="16dp">
+					<LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="center_vertical">
+						<ImageView android:layout_width="16dp" android:layout_height="16dp" android:src="@android:drawable/ic_menu_agenda" app:tint="#6B7280" android:layout_marginEnd="8dp"/>
+						<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Total Expenses" android:textColor="#6B7280" android:textSize="12sp" />
+					</LinearLayout>
+					<TextView android:id="@+id/tvTotalCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textColor="#047857" android:textSize="32sp" android:textStyle="bold" android:layout_marginTop="8dp"/>
+					<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="All time" android:textColor="#6B7280" android:textSize="10sp" android:layout_marginTop="4dp" />
+				</LinearLayout>
+			</com.google.android.material.card.MaterialCardView>
+		</LinearLayout>
+
+		<com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical" />
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="@android:color/white"
+            android:layout_marginBottom="16dp">
+			<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="16dp">
+				<LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginBottom="4dp">
+					<ImageView android:layout_width="18dp" android:layout_height="18dp" android:src="@android:drawable/ic_menu_today" app:tint="#1F2937" android:layout_marginEnd="8dp"/>
+					<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Weekly Spending" android:textColor="#1F2937" android:textSize="16sp" android:textStyle="bold" />
+				</LinearLayout>
+				<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Your spending pattern for this week" android:textColor="#6B7280" android:textSize="14sp" android:layout_marginBottom="16dp"/>
 
-	</ScrollView>
+				<microcharts.droid.ChartView
+					android:id="@+id/chartWeekly"
+					android:layout_width="match_parent"
+					android:layout_height="180dp" />
+			</LinearLayout>
+		</com.google.android.material.card.MaterialCardView>
 
-</LinearLayout>
+		<com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="@android:color/white"
+            android:layout_marginBottom="40dp">
+			<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="16dp">
+				<LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginBottom="4dp">
+					<ImageView android:layout_width="18dp" android:layout_height="18dp" android:src="@android:drawable/ic_menu_sort_by_size" app:tint="#1F2937" android:layout_marginEnd="8dp"/>
+					<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Spending by Category" android:textColor="#1F2937" android:textSize="16sp" android:textStyle="bold" />
+				</LinearLayout>
+				<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Distribution of your expenses" android:textColor="#6B7280" android:textSize="14sp" android:layout_marginBottom="16dp"/>
+
+				<microcharts.droid.ChartView
+					android:id="@+id/chartCategory"
+					android:layout_width="match_parent"
+					android:layout_height="220dp"
+					android:layout_marginBottom="16dp" />
+
+				<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Top 3 Categories" android:textColor="#1F2937" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="12dp"/>
+				<androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvTopCategoriesBreakdown"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false" />
+			</LinearLayout>
+		</com.google.android.material.card.MaterialCardView>
+
+	</LinearLayout>
+</androidx.core.widget.NestedScrollView>

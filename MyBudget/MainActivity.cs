@@ -1,11 +1,15 @@
+using Android.Content.PM;
+using Android.OS;
 using AndroidX.AppCompat.App;
+using AndroidX.Core.App;
+using AndroidX.Core.Content;
 using Google.Android.Material.BottomNavigation;
 using Google.Android.Material.Navigation;
 using MyBudget.Fragments;
 
 namespace MyBudget
 {
-    [Activity(Label = "@string/app_name", Theme = "@style/Theme.MyBudget", MainLauncher = true)]
+    [Activity(Label = "MyBudget", Theme = "@style/Theme.MyBudget", MainLauncher = true)]
     public class MainActivity : AppCompatActivity
     {
         private BottomNavigationView bottomNavigation;
@@ -21,6 +25,14 @@ namespace MyBudget
 
                 bottomNavigation = FindViewById<BottomNavigationView>(MyBudget.Resource.Id.bottomNavigation);
                 bottomNavigation.ItemSelected += BottomNavigation_ItemSelected;
+
+                if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
+                {
+                    if (ContextCompat.CheckSelfPermission(this, Android.Manifest.Permission.PostNotifications) != Permission.Granted)
+                    {
+                        ActivityCompat.RequestPermissions(this, new[] { Android.Manifest.Permission.PostNotifications }, 100);
+                    }
+                }
 
                 if (savedInstanceState == null)
                 {

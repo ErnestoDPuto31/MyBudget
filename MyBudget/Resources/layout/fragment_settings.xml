@@ -3,37 +3,36 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp"
-    android:clipToPadding="false"
-    android:paddingBottom="80dp">
-
+    android:fillViewport="true"
+    android:background="#F0FDF4">
 	<LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="20dp">
 
 		<TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Settings"
-            android:textColor="@color/primaryDark"
+            android:textColor="#047857"
             android:textSize="28sp"
             android:textStyle="bold" />
-
 		<TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Configure your budget preferences"
-            android:textColor="@color/gray"
+            android:textColor="#6B7280"
             android:textSize="14sp"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="20dp" />
 
+	
 		<com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            app:cardBackgroundColor="@color/cardBackground"
-            app:cardCornerRadius="12dp"
+            app:cardBackgroundColor="@android:color/white"
+            app:cardCornerRadius="16dp"
             app:cardElevation="2dp">
 
 			<LinearLayout
@@ -42,31 +41,33 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-				<TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Budget Period"
-                    android:textColor="@color/foreground"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="8dp"/>
+				<LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginBottom="4dp">
+					<ImageView android:layout_width="18dp" android:layout_height="18dp" android:src="@android:drawable/ic_menu_manage" app:tint="#1F2937" android:layout_marginEnd="8dp"/>
+					<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Budget Configuration" android:textColor="#1F2937" android:textSize="16sp" android:textStyle="bold" />
+				</LinearLayout>
+				<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Set your budget period and amount" android:textColor="#6B7280" android:textSize="14sp" android:layout_marginBottom="16dp"/>
+
+				<LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginBottom="8dp">
+					<ImageView android:layout_width="16dp" android:layout_height="16dp" android:src="@android:drawable/ic_menu_today" app:tint="#1F2937" android:layout_marginEnd="8dp"/>
+					<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Budget Period" android:textColor="#1F2937" android:textSize="14sp" android:textStyle="bold" />
+				</LinearLayout>
 
 				<RadioGroup
                     android:id="@+id/rgBudgetPeriod"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp">
-
+                    android:layout_marginBottom="24dp">
 					<RadioButton
                         android:id="@+id/rbWeekly"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:paddingVertical="8dp"
                         android:text="Weekly Budget (Reset every 7 days)" />
-
 					<RadioButton
                         android:id="@+id/rbMonthly"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:paddingVertical="8dp"
                         android:text="Monthly Budget (Reset every 30 days)" />
 				</RadioGroup>
 
@@ -74,24 +75,40 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Budget Amount"
-                    android:textColor="@color/foreground"
-                    android:textSize="16sp"
+                    android:textColor="#1F2937"
+                    android:textSize="14sp"
                     android:textStyle="bold"
                     android:layout_marginBottom="8dp"/>
 
 				<com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
+                    android:layout_marginBottom="8dp"
                     app:prefixText="₱ "
-                    android:hint="0.00">
-
+                    app:boxBackgroundColor="#F9FAFB"
+                    android:hint="1000.00">
 					<com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etBudgetAmount"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="numberDecimal" />
+                        android:inputType="numberDecimal"
+                        android:textSize="18sp"/>
 				</com.google.android.material.textfield.TextInputLayout>
+
+				<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Enter your total budget amount" android:textColor="#6B7280" android:textSize="12sp" android:layout_marginBottom="16dp"/>
+
+				<LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="#D1FAE5"
+                    android:padding="16dp"
+                    android:layout_marginBottom="20dp">
+
+					<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Daily Limit Preview" android:textColor="#065F46" android:textSize="12sp" />
+					<TextView android:id="@+id/tvPreviewAmount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="₱0.00" android:textColor="#047857" android:textSize="24sp" android:textStyle="bold" android:layout_marginTop="4dp"/>
+					<TextView android:id="@+id/tvPreviewText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Your budget will be divided into a daily limit." android:textColor="#065F46" android:textSize="12sp" android:layout_marginTop="4dp" />
+				</LinearLayout>
 
 				<com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSaveSettings"
@@ -99,39 +116,113 @@
                     android:layout_height="56dp"
                     android:text="Save Budget Settings"
                     android:textSize="16sp"
+                    app:icon="@android:drawable/ic_menu_save"
+                    app:iconGravity="textStart"
                     app:cornerRadius="8dp"
-                    app:backgroundTint="@color/primary" />
+                    app:backgroundTint="#059669" />
 			</LinearLayout>
 		</com.google.android.material.card.MaterialCardView>
 
 		<com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="@color/cardBackground"
-            app:cardCornerRadius="12dp"
+            android:layout_marginBottom="16dp"
+            app:cardBackgroundColor="@android:color/white"
+            app:cardCornerRadius="16dp"
             app:cardElevation="2dp">
-
 			<LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:padding="16dp">
 
-				<TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="About MyBudget"
-                    android:textColor="@color/foreground"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="8dp"/>
+				<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Notifications" android:textColor="#1F2937" android:textSize="16sp" android:textStyle="bold" android:layout_marginBottom="12dp" />
 
-				<TextView
+				<LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical">
+					<TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Daily Expense Reminder" android:textColor="#6B7280" android:textSize="14sp" />
+					<com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchDailyReminder"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:thumbTint="#059669"/>
+				</LinearLayout>
+
+				<LinearLayout android:id="@+id/layoutReminderTime" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginTop="12dp">
+					<TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Reminder Time" android:textColor="#6B7280" android:textSize="14sp" />
+					<TextView android:id="@+id/tvReminderTime" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="8:00 PM" android:textColor="#1F2937" android:textSize="14sp" android:textStyle="bold"/>
+				</LinearLayout>
+			</LinearLayout>
+		</com.google.android.material.card.MaterialCardView>
+
+		<com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="@android:color/white"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            android:layout_marginBottom="40dp">
+
+			<LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+				<LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginBottom="20dp">
+					<ImageView android:layout_width="18dp" android:layout_height="18dp" android:src="@android:drawable/ic_menu_info_details" app:tint="#1F2937" android:layout_marginEnd="8dp"/>
+					<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="About MyBudget" android:textColor="#1F2937" android:textSize="16sp" android:textStyle="bold" />
+				</LinearLayout>
+
+				<LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+					<TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Version" android:textColor="#6B7280" android:textSize="14sp" />
+					<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="2.0.1" android:textColor="#1F2937" android:textSize="14sp" android:textStyle="bold"/>
+				</LinearLayout>
+
+				<View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E5E7EB" android:layout_marginTop="12dp" android:layout_marginBottom="12dp"/>
+
+				<LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+					<TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Data Storage" android:textColor="#6B7280" android:textSize="14sp" />
+					<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Local Storage" android:textColor="#1F2937" android:textSize="14sp" android:textStyle="bold"/>
+				</LinearLayout>
+
+				<View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E5E7EB" android:layout_marginTop="12dp" android:layout_marginBottom="12dp"/>
+
+				<LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+					<TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Developer" android:textColor="#6B7280" android:textSize="14sp" />
+					<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Ernest Victor V. Agalo" android:textColor="#1F2937" android:textSize="14sp" android:textStyle="bold"/>
+				</LinearLayout>
+
+				<com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnExportData"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Version: 1.0.0\nDeveloper: Ernest Victor V. Agalo"
-                    android:textColor="@color/gray"
-                    android:lineSpacingExtra="4dp"/>
+                    android:layout_marginTop="16dp"
+                    android:text="Export Data (.txt)"
+                    android:textColor="#059669"
+                    app:strokeColor="#059669"
+                    app:icon="@android:drawable/ic_menu_share"
+                    app:iconTint="#059669"
+                    app:cornerRadius="8dp" />
+
+				<LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="#ECFDF5"
+                    app:cornerRadius="8dp"
+                    android:padding="16dp"
+                    android:layout_marginTop="20dp">
+
+					<TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="MyBudget helps you track your expenses and stay within your budget. All your data is stored locally on your device for privacy and security."
+                        android:textColor="#065F46"
+                        android:textSize="13sp"
+                        android:lineSpacingExtra="4dp"/>
+				</LinearLayout>
+
 			</LinearLayout>
 		</com.google.android.material.card.MaterialCardView>
 	</LinearLayout>
